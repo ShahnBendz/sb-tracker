@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Shahn Bendz — Submission Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #F2F2F7;
+            --card: #FFFFFF;
+            --primary: #007AFF;
+            --primary-light: rgba(0,122,255,0.1);
+            --success: #34C759;
+            --warning: #FF9500;
+            --danger: #FF3B30;
+            --purple: #AF52DE;
+            --teal: #32ADE6;
+            --text-primary: #1C1C1E;
+            --text-secondary: #8E8E93;
+            --text-tertiary: #AEAEB2;
+            --border: rgba(0,0,0,0.08);
+            --border-strong: rgba(0,0,0,0.15);
+            --shadow: 0 2px 12px rgba(0,0,0,0.07);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .header-left { display: flex; flex-direction: column; }
+        .header-title { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+        .header-subtitle { font-size: 11px; color: var(--text-secondary); margin-top: 1px; letter-spacing: 0.1px; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+
+        .btn-primary-sm {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: opacity 0.15s;
+            white-space: nowrap;
+        }
+        .btn-primary-sm:hover { opacity: 0.82; }
+
+        .btn-ghost-sm {
+            background: var(--bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 20px;
+            padding: 7px 13px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .btn-ghost-sm:hover { background: #E5E5EA; color: var(--text-primary); }
+
+        /* ── TABS ── */
+        .tabs {
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            padding: 0 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            position: sticky;
+            top: 57px;
+            z-index: 190;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab {
+            padding: 12px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.15s;
+            font-family: var(--font);
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+        /* ── CONTENT ── */
+        .content { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        @media (min-width: 640px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .stat-value { font-size: 34px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; }
+        .stat-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+        .stat-card.blue .stat-value { color: var(--primary); }
+        .stat-card.orange .stat-value { color: var(--warning); }
+        .stat-card.green .stat-value { color: var(--success); }
+        .stat-card.purple .stat-value { color: var(--purple); }
+
+        /* ── CHARTS ── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (min-width: 760px) { .charts-grid { grid-template-columns: 3fr 2fr; } }
+
+        .chart-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+        }
+        .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+        .chart-container { position: relative; height: 190px; }
+
+        /* ── TIER BREAKDOWN ── */
+        .tier-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .tier-row:last-child { border-bottom: none; }
+        .tier-name { flex: 1; font-weight: 500; color: var(--text-primary); }
+        .tier-bar-wrap { flex: 2; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+        .tier-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+        .tier-count { color: var(--text-secondary); min-width: 24px; text-align: right; font-variant-numeric: tabular-nums; }
+        .p1-bar { background: #FFD60A; }
+        .p2-bar { background: #8E8E93; }
+        .p3-bar { background: #B87333; }
+        .p4-bar { background: #AF52DE; }
+        .p5-bar { background: #32ADE6; }
+
+        /* ── PRIORITY SECTIONS ── */
+        .priority-section { margin-bottom: 28px; }
+        .priority-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .priority-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .p1-badge { background: rgba(255,214,10,0.15); color: #9A7B00; }
+        .p2-badge { background: rgba(142,142,147,0.15); color: #636366; }
+        .p3-badge { background: rgba(184,115,51,0.15); color: #7C4E1E; }
+        .p4-badge { background: rgba(175,82,222,0.15); color: #7B3FA0; }
+        .p5-badge { background: rgba(50,173,230,0.15); color: #0071A4; }
+        .priority-count { font-size: 12px; color: var(--text-tertiary); }
+
+        /* ── SEARCH BAR ── */
+        .search-bar {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px 14px 10px 36px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-strong);
+            background: var(--card);
+            font-size: 14px;
+            font-family: var(--font);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.15s;
+            box-shadow: var(--shadow);
+        }
+        .search-bar input:focus { border-color: var(--primary); }
+        .search-bar .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        /* ── CONTACT CARDS ── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        @media (min-width: 580px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 960px) { .cards-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        .contact-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            transition: transform 0.15s, box-shadow 0.15s;
+            cursor: default;
+        }
+        .contact-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .card-name { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.2; }
+        .card-boss { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .card-btns { display: flex; gap: 5px; flex-shrink: 0; margin-left: 8px; }
+
+        .btn-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: background 0.15s;
+            font-family: var(--font);
+        }
+        .btn-icon:hover { background: #D1D1D6; }
+
+        .card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+        .tag {
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1px;
+        }
+        .tag-label { background: rgba(0,122,255,0.1); color: var(--primary); }
+        .tag-dj { background: rgba(175,82,222,0.1); color: #7B3FA0; }
+
+        .card-info { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+        .info-row { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; }
+        .info-label {
+            color: var(--text-tertiary);
+            min-width: 56px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-top: 1px;
+            flex-shrink: 0;
+        }
+        .info-value { color: var(--text-primary); flex: 1; line-height: 1.4; }
+        .info-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            word-break: break-all;
+        }
+        .info-link:hover { text-decoration: underline; }
+
+        .card-notes {
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 9px 11px;
+            margin-bottom: 10px;
+        }
+        .card-notes-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+        .card-notes-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+        /* ── SUBMISSIONS IN CARD ── */
+        .card-subs { border-top: 1px solid var(--border); padding-top: 10px; }
+        .card-subs-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .card-subs-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+        }
+        .btn-add-sub {
+            font-size: 11px;
+            color: var(--primary);
+            font-weight: 600;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: var(--font);
+        }
+        .sub-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 8px;
+            cursor: pointer;
+        }
+        .sub-item:hover { opacity: 0.75; }
+        .sub-item:last-child { border-bottom: none; }
+        .sub-song { font-size: 12px; font-weight: 600; }
+        .sub-date { font-size: 11px; color: var(--text-tertiary); }
+        .no-subs { font-size: 12px; color: var(--text-tertiary); font-style: italic; }
+
+        /* ── STATUS BADGES ── */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .badge-sent { background: rgba(0,122,255,0.1); color: var(--primary); }
+        .badge-response { background: rgba(255,149,0,0.1); color: var(--warning); }
+        .badge-signed { background: rgba(52,199,89,0.1); color: var(--success); }
+        .badge-interested { background: rgba(52,199,89,0.12); color: #248A3D; }
+        .badge-hold { background: rgba(255,149,0,0.12); color: #C93400; }
+        .badge-pass { background: rgba(255,59,48,0.1); color: var(--danger); }
+        .badge-no_reply { background: rgba(142,142,147,0.12); color: var(--text-secondary); }
+
+        /* ── SUBMISSIONS TABLE ── */
+        .view-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .view-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+
+        .filter-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .filter-row::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            padding: 5px 13px;
+            border-radius: 20px;
+            border: 1px solid var(--border-strong);
+            background: var(--card);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .table-wrap {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .table-search {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .table-search input {
+            width: 100%;
+            padding: 9px 13px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-strong);
+            background: var(--bg);
+            font-size: 14px;
+            font-family: var(--font);
+            color: var(--text-primary);
+            outline: none;
+        }
+        .table-search input:focus { border-color: var(--primary); }
+
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            padding: 9px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            background: #F9F9FB;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 11px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+        tbody tr { cursor: pointer; transition: background 0.1s; }
+        tbody tr:hover td { background: rgba(0,122,255,0.03); }
+        .td-name { font-weight: 600; }
+        .td-contact { color: var(--text-secondary); }
+        @media (max-width: 580px) { .hide-mobile { display: none; } td, th { padding: 10px 12px; } }
+
+        .empty-table {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-table-icon { font-size: 36px; margin-bottom: 10px; }
+        .empty-table-text { font-size: 15px; font-weight: 600; }
+        .empty-table-sub { font-size: 13px; margin-top: 4px; color: var(--text-tertiary); }
+
+        /* ── MODAL ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.38);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        @media (min-width: 600px) {
+            .modal-overlay { align-items: center; padding: 24px; }
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--card);
+            border-radius: var(--radius) var(--radius) 0 0;
+            width: 100%;
+            max-height: 92vh;
+            overflow-y: auto;
+            padding: 20px 20px 32px;
+            animation: slideUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @media (min-width: 600px) {
+            .modal { border-radius: var(--radius); width: 560px; max-height: 88vh; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 16px; }
+        @media (min-width: 600px) { .modal-handle { display: none; } }
+
+        .modal-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 20px; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 11px 13px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-strong);
+            background: var(--bg);
+            font-size: 15px;
+            font-family: var(--font);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.15s, background 0.15s;
+            appearance: auto;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--primary);
+            background: white;
+        }
+        .form-textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .btn-save {
+            flex: 1;
+            min-width: 120px;
+            padding: 13px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .btn-save:hover { opacity: 0.82; }
+        .btn-cancel {
+            padding: 13px 18px;
+            background: var(--bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-cancel:hover { background: #E5E5EA; }
+        .btn-delete {
+            padding: 13px 18px;
+            background: rgba(255,59,48,0.1);
+            color: var(--danger);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-delete:hover { background: rgba(255,59,48,0.18); }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: #1C1C1E;
+            color: white;
+            padding: 11px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 3000;
+            opacity: 0;
+            transition: all 0.25s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ── EXPORT/IMPORT ── */
+        .data-menu {
+            position: relative;
+            display: inline-block;
+        }
+        .data-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            min-width: 160px;
+            overflow: hidden;
+            display: none;
+            z-index: 300;
+        }
+        .data-dropdown.open { display: block; }
+        .data-dropdown button {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            text-align: left;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-family: var(--font);
+            color: var(--text-primary);
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-dropdown button:last-child { border-bottom: none; }
+        .data-dropdown button:hover { background: var(--bg); }
+        .data-dropdown button.danger { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+    <div class="header-left">
+        <div class="header-title">Shahn Bendz</div>
+        <div class="header-subtitle">Submission Tracker</div>
+    </div>
+    <div class="header-actions">
+        <div id="sync-indicator" style="font-size:11px;color:var(--text-tertiary);display:none;align-items:center;gap:4px;">
+            <span id="sync-dot" style="width:6px;height:6px;border-radius:50%;background:var(--text-tertiary);display:inline-block;"></span>
+            <span id="sync-label">Syncing…</span>
+        </div>
+        <div class="data-menu" id="data-menu">
+            <button class="btn-ghost-sm" onclick="toggleDataMenu()">⚙️ Data</button>
+            <div class="data-dropdown" id="data-dropdown">
+                <button onclick="openSheetsSetup()">☁️ Google Sheets Setup</button>
+                <button onclick="manualSync()">🔄 Sync Now</button>
+                <button onclick="exportData()">📤 Export JSON</button>
+                <button onclick="document.getElementById('import-file').click()">📥 Import JSON</button>
+                <button class="danger" onclick="resetData()">🗑 Reset to Defaults</button>
+            </div>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+        <button class="btn-primary-sm" onclick="openContactModal()">+ Add Contact</button>
+    </div>
+</div>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard', this)">📊 Dashboard</button>
+    <button class="tab" onclick="switchTab('labels', this)">🏷 Labels</button>
+    <button class="tab" onclick="switchTab('djs', this)">🎧 DJs</button>
+    <button class="tab" onclick="switchTab('submissions', this)">📋 Submissions</button>
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="dashboard-view" class="view active">
+        <div class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-label">Total Sent</div>
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-sub">submissions</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-label">Response Rate</div>
+                <div class="stat-value" id="stat-rate">0%</div>
+                <div class="stat-sub">of all sent</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-label">Signed</div>
+                <div class="stat-value" id="stat-signed">0</div>
+                <div class="stat-sub">tracks</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-label">Contacts</div>
+                <div class="stat-value" id="stat-contacts">0</div>
+                <div class="stat-sub">total</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">Weekly Submissions (Last 8 Weeks)</div>
+                <div class="chart-container"><canvas id="weeklyChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Response Breakdown</div>
+                <div class="chart-container"><canvas id="responseChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Submissions by Priority Tier</div>
+            <div id="tier-breakdown"></div>
+        </div>
+    </div>
+
+    <!-- LABELS -->
+    <div id="labels-view" class="view">
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Search labels..." oninput="filterCards('labels-content', this.value)">
+        </div>
+        <div id="labels-content"></div>
+    </div>
+
+    <!-- DJs -->
+    <div id="djs-view" class="view">
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Search DJs..." oninput="filterCards('djs-content', this.value)">
+        </div>
+        <div id="djs-content"></div>
+    </div>
+
+    <!-- SUBMISSIONS -->
+    <div id="submissions-view" class="view">
+        <div class="view-toolbar">
+            <div class="view-title">All Submissions</div>
+            <button class="btn-primary-sm" onclick="openSubmissionModal()">+ Log Submission</button>
+        </div>
+        <div class="filter-row">
+            <button class="filter-btn active" onclick="filterSubs('all', this)">All</button>
+            <button class="filter-btn" onclick="filterSubs('sent', this)">Sent</button>
+            <button class="filter-btn" onclick="filterSubs('response', this)">Got Response</button>
+            <button class="filter-btn" onclick="filterSubs('signed', this)">Signed 🎉</button>
+        </div>
+        <div class="table-wrap">
+            <div class="table-search">
+                <input type="text" placeholder="Search by song or contact..." oninput="searchSubs(this.value)">
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Song</th>
+                            <th>Contact</th>
+                            <th class="hide-mobile">Type</th>
+                            <th class="hide-mobile">Priority</th>
+                            <th>Status</th>
+                            <th class="hide-mobile">Date Sent</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="subs-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── CONTACT MODAL ── -->
+<div class="modal-overlay" id="contact-modal" onclick="handleOverlayClick(event, 'contact-modal')">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="contact-modal-title">Add Contact</div>
+        <input type="hidden" id="cm-id">
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="cm-type">
+                    <option value="label">Label</option>
+                    <option value="dj">DJ / Artist</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Priority Tier</label>
+                <select class="form-select" id="cm-priority">
+                    <option value="1">🥇 Priority 1 — Send First</option>
+                    <option value="2">🥈 Priority 2 — Very Strong</option>
+                    <option value="3">🥉 Priority 3 — Rising</option>
+                    <option value="4">🎯 Priority 4 — Hardgroove</option>
+                    <option value="5">🌎 Priority 5 — Wildcard</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Name *</label>
+            <input class="form-input" id="cm-name" type="text" placeholder="Label or DJ/Artist name">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Label Boss / Key Contact</label>
+            <input class="form-input" id="cm-boss" type="text" placeholder="Person who runs the label">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Instagram Handle</label>
+                <input class="form-input" id="cm-ig" type="text" placeholder="@handle">
+            </div>
+            <div class="form-group">
+                <label class="form-label">IG Profile URL</label>
+                <input class="form-input" id="cm-ig-url" type="url" placeholder="https://instagram.com/...">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Contact Method</label>
+                <select class="form-select" id="cm-method">
+                    <option value="">— Select —</option>
+                    <option value="Instagram DM">Instagram DM</option>
+                    <option value="Email">Email</option>
+                    <option value="Submission Portal">Submission Portal</option>
+                    <option value="SoundCloud DM">SoundCloud DM</option>
+                    <option value="Demo Drop Link">Demo Drop Link</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contact Link / Email</label>
+                <input class="form-input" id="cm-link" type="text" placeholder="URL or email address">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Submission Portal Link</label>
+            <input class="form-input" id="cm-sub-link" type="url" placeholder="Direct demo submission URL">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="cm-notes" placeholder="Sound, vibe, what they look for, tips, relationship notes..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('contact-modal')">Cancel</button>
+            <button class="btn-delete" id="cm-delete-btn" onclick="deleteContact()" style="display:none">Delete</button>
+            <button class="btn-save" onclick="saveContact()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── SUBMISSION MODAL ── -->
+<div class="modal-overlay" id="submission-modal" onclick="handleOverlayClick(event, 'submission-modal')">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="sm-title">Log Submission</div>
+        <input type="hidden" id="sm-id">
+
+        <div class="form-group">
+            <label class="form-label">Contact *</label>
+            <select class="form-select" id="sm-contact"></select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Song Title *</label>
+            <input class="form-input" id="sm-song" type="text" placeholder="Track name">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Date Sent</label>
+                <input class="form-input" id="sm-date" type="date">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="sm-status" onchange="onStatusChange()">
+                    <option value="sent">Sent</option>
+                    <option value="response">Got a Response</option>
+                    <option value="signed">Signed! 🎉</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="sm-response-group" style="display:none">
+            <div class="form-group">
+                <label class="form-label">Response Detail</label>
+                <select class="form-select" id="sm-response">
+                    <option value="interested">✅ Interested</option>
+                    <option value="hold">⏳ Hold / Considering</option>
+                    <option value="pass">❌ Pass</option>
+                    <option value="no_reply">🔇 No Reply</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="sm-date-responded-group" style="display:none">
+            <div class="form-group">
+                <label class="form-label">Date Responded</label>
+                <input class="form-input" id="sm-date-responded" type="date">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="sm-notes" placeholder="Any notes about this submission..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('submission-modal')">Cancel</button>
+            <button class="btn-delete" id="sm-delete-btn" onclick="deleteSubmission()" style="display:none">Delete</button>
+            <button class="btn-save" onclick="saveSubmission()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── GOOGLE SHEETS SETUP MODAL ── -->
+<div class="modal-overlay" id="sheets-modal" onclick="handleOverlayClick(event,'sheets-modal')">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-title">☁️ Google Sheets Setup</div>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px;">
+            Connect to Google Sheets so your data syncs across every device. Takes about 5 minutes to set up once.
+        </p>
+
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;font-size:13px;line-height:1.8;">
+            <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);">Setup Steps</strong><br>
+            <span style="color:var(--text-primary);">
+                1. Open <a href="https://sheets.google.com" target="_blank" class="info-link">Google Sheets</a> → create a new blank sheet<br>
+                2. Click <strong>Extensions → Apps Script</strong><br>
+                3. Delete all existing code, paste the script from <strong>google-apps-script.js</strong> (on your Desktop)<br>
+                4. Click <strong>Deploy → New Deployment → Web App</strong><br>
+                5. Set <em>Execute as:</em> <strong>Me</strong> · <em>Who has access:</em> <strong>Anyone</strong><br>
+                6. Click <strong>Deploy</strong> → copy the Web App URL<br>
+                7. Paste it below and click Save
+            </span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Web App URL</label>
+            <input class="form-input" id="sheets-url-input" type="url"
+                placeholder="https://script.google.com/macros/s/…/exec"
+                style="font-size:13px;">
+        </div>
+
+        <div id="sheets-status" style="font-size:12px;margin-top:4px;display:none;"></div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('sheets-modal')">Cancel</button>
+            <button class="btn-delete" onclick="disconnectSheets()" id="disconnect-btn" style="display:none">Disconnect</button>
+            <button class="btn-save" onclick="saveAndTestSheets()">Save &amp; Test</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function today() {
+    return new Date().toISOString().split('T')[0];
+}
+
+function fmtDate(d) {
+    if (!d) return '—';
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+// ════════════════════════════════════════
+//  DEFAULT DATA (all 5 priority tiers)
+// ════════════════════════════════════════
+function makeContact(name, type, priority, labelBoss = '') {
+    return { id: uid(), name, type, priority, labelBoss, ig: '', igUrl: '', method: '', contactLink: '', subLink: '', notes: '' };
+}
+
+const DEFAULT_CONTACTS = [
+    // ══════════════════════════════════════
+    // PRIORITY 1 — LABELS
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'DOOF', type: 'label', priority: 1, labelBoss: 'Hannah Laing',
+        ig: '@doof_music', igUrl: 'https://www.instagram.com/doof_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/doof_music/',
+        subLink: '',
+        notes: "Hannah Laing's UK rave-techno label — a perfect stylistic match for your groove-driven sound. Fast-rising imprint with a massive scene following. DM the label directly or contact Hannah's management: josh@lovingalliance.com. This is your #1 priority send."
+    },
+    {
+        id: uid(), name: 'OUTWORLD', type: 'label', priority: 1, labelBoss: 'HI-LO (Oliver Heldens)',
+        ig: '@officialhilo', igUrl: 'https://www.instagram.com/officialhilo/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/officialhilo/',
+        subLink: '',
+        notes: "Oliver Heldens' techno alias runs HILOMATIK label, focused on the 'musical side of techno.' Bridging mainstage and underground — big name with real credibility. DM @officialhilo or check the HILOMATIK label for submission updates."
+    },
+    {
+        id: uid(), name: 'Filth on Acid', type: 'label', priority: 1, labelBoss: 'Reinier Zonneveld',
+        ig: '@filthonacid', igUrl: 'https://www.instagram.com/filthonacid/',
+        method: 'Email', contactLink: 'demos@filthonacid.nl',
+        subLink: '',
+        notes: "Founded 2017 by Dutch producer Reinier Zonneveld. High-energy peak-hour techno — great fit for your rave-hook direction. Also accepts submissions via the VIRPP platform. Email is the primary channel."
+    },
+    {
+        id: uid(), name: 'Codex Recordings', type: 'label', priority: 1, labelBoss: 'Spartaque',
+        ig: '@codexrec', igUrl: 'https://www.instagram.com/codexrec/',
+        method: 'Email', contactLink: 'demo@codexfamily.com',
+        subLink: 'https://iamtmusic.com/demo',
+        notes: "Barcelona-based, run by IAMT Music Group. ⚠️ SoundCloud secret links ONLY — put all tracks in one secret playlist. Write a PERSONALIZED message — Spartaque commits to responding personally. Do NOT send copy-paste messages. This approach separates you from the crowd."
+    },
+    {
+        id: uid(), name: '1605', type: 'label', priority: 1, labelBoss: 'UMEK',
+        ig: '@umek_1605', igUrl: 'https://www.instagram.com/umek_1605/',
+        method: 'Email / LabelRadar', contactLink: 'ina@sixteenofive.com',
+        subLink: 'https://www.labelradar.com/labels/1605',
+        notes: "Data-driven techno label, founded 2007 by Slovenian veteran UMEK. UMEK personally reviews demos — he's said he listens to everything himself. Submit via LabelRadar for the streamlined official channel or email ina@sixteenofive.com directly."
+    },
+    {
+        id: uid(), name: 'We Are The Brave', type: 'label', priority: 1, labelBoss: 'Alan Fitzpatrick',
+        ig: '@wearethebraveofficial', igUrl: 'https://www.instagram.com/wearethebraveofficial/',
+        method: 'SoundCloud / Instagram DM', contactLink: 'https://www.instagram.com/wearethebraveofficial/',
+        subLink: '',
+        notes: "Alan Fitzpatrick's label — no specific sound policy. Fitzpatrick has said: 'If the music's good, I release it.' Bold, melodic techno with heart. Southampton-based. Reach via SoundCloud or DM the label. No formal submission portal — keep it personal."
+    },
+    {
+        id: uid(), name: 'Terminal M', type: 'label', priority: 1, labelBoss: 'Monika Kruse',
+        ig: '@terminalmrecords', igUrl: 'https://www.instagram.com/terminalmrecords/',
+        method: 'Email', contactLink: 'demo@monikakruse.de',
+        subLink: '',
+        notes: "Founded 2000 by Monika Kruse — one of Europe's premier techno institutions. Berlin-based. Primarily techno with occasional house elements. German scene royalty. Email demos directly to the label address."
+    },
+    {
+        id: uid(), name: 'Repopulate Mars', type: 'label', priority: 1, labelBoss: 'Lee Foss',
+        ig: '@repopulatemars', igUrl: 'https://www.instagram.com/repopulatemars/',
+        method: 'Email', contactLink: 'demos@repopulatemars.com',
+        subLink: '',
+        notes: "⚠️ Private SoundCloud or Dropbox links ONLY — no WeTransfer, Google Drive etc. Max 4 demos in a private playlist. Full/extended mixes preferred over short edits. More house/tech-house leaning but crosses into techno — groove-driven tracks are your best bet here."
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 1 — DJs
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'Hannah Laing', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@hannahlaingdj', igUrl: 'https://www.instagram.com/hannahlaingdj/',
+        method: 'Management Email', contactLink: 'josh@lovingalliance.com',
+        subLink: '',
+        notes: "Scottish DJ/producer from Dundee, runs DOOF label. High-energy rave-techno sound — your groove-driven style is exactly on brand for her world. Booking: kal.jhugroo@caa.com. Also submit directly to her DOOF label via IG DM @doof_music."
+    },
+    {
+        id: uid(), name: 'HI-LO', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@officialhilo', igUrl: 'https://www.instagram.com/officialhilo/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/officialhilo/',
+        subLink: '',
+        notes: "Oliver Heldens' darker techno alias. Runs HILOMATIK label. Actively bridging mainstage and underground in 2026 — your groove-rave sound could fit perfectly in his sets. DM @officialhilo directly or target his HILOMATIK label."
+    },
+    {
+        id: uid(), name: 'Eli Brown', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@elibrownbeats', igUrl: 'https://www.instagram.com/elibrownbeats/',
+        method: 'Management DM', contactLink: 'https://www.instagram.com/nightdepartment/',
+        subLink: '',
+        notes: "British DJ/producer and founder of Arcane Records. Leading force in global techno. Best route in: submit to Arcane label at arcanerec@gmail.com — if he signs your track, he'll play it. Also DM his management @nightdepartment on IG."
+    },
+    {
+        id: uid(), name: 'Space 92', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@space92__official', igUrl: 'https://www.instagram.com/space92__official/',
+        method: 'Management Email', contactLink: 'ghayath@form-mgmt.com',
+        subLink: '',
+        notes: "French producer with trancey acid-techno sound. Founder of @takeoff_music. 268K followers, massive momentum right now. Management: ghayath@form-mgmt.com. Booking: katarina@lovelive.agency. Target via his label Takeoff Music for best shot at support."
+    },
+    {
+        id: uid(), name: 'Layton Giordani', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@laytongiordani', igUrl: 'https://www.instagram.com/laytongiordani/',
+        method: 'Website / DM', contactLink: 'https://www.laytongiordanimusic.com/',
+        subLink: '',
+        notes: "NYC-based techno DJ. Associated with MADMINDS label. 232K IG followers. Reach via his website contact form or DM directly on IG. Known for driving, groove-heavy techno — solid match for your sound."
+    },
+    {
+        id: uid(), name: 'Maddix', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@maddixmusic', igUrl: 'https://www.instagram.com/maddixmusic/',
+        method: 'Management Email', contactLink: 'rolf@anna-agency.nl',
+        subLink: '',
+        notes: "Dutch DJ/producer known for genre-breaking techno-rave with big room and trance influences. 544K IG followers, #95 DJ Mag 2023. Your rave-hook style is right in his wheelhouse. North America: maddixteam@unitedtalent.com."
+    },
+    {
+        id: uid(), name: 'Azyr', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@azyr_music', igUrl: 'https://www.instagram.com/azyr_music/',
+        method: 'Email (Speed Limit Records)', contactLink: 'speed.limit.recs@gmail.com',
+        subLink: '',
+        notes: "UK-based hard techno, acid, schranz, and rave DJ from Blackpool. Runs Speed Limit Records — email his label for the best shot at support. Booking: BOOKINGS@JINNAGENCY.COM. Your groove-rave direction could catch his ear."
+    },
+    {
+        id: uid(), name: 'Charlie Sparks', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@charliesparksmusic', igUrl: 'https://www.instagram.com/charliesparksmusic/',
+        method: 'Booking / DM', contactLink: 'nina@apelago.com',
+        subLink: '',
+        notes: "London-based acid/industrial/rave/psytrance DJ. 268K followers, massive momentum. Note: had a release on EXHALE (also on your P5 list!) — a crossover point worth mentioning. Self-taught since 2019, architecture grad turned full-time techno artist."
+    },
+    {
+        id: uid(), name: 'Joyhauser', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@joyhauser_', igUrl: 'https://www.instagram.com/joyhauser_/',
+        method: 'Management Email', contactLink: 'LRuiz@wmeagency.com',
+        subLink: '',
+        notes: "Belgian duo (Stijn Vanspauwen & Joris Cielen) from Antwerp. Dynamic driving techno. Released on Terminal M, Kraftek, Phobiq. Play Awakenings, Loveland, Rotterdam Rave. 92K IG followers. Managed by WME."
+    },
+    {
+        id: uid(), name: 'Alan Fitzpatrick', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@alanfitzpatrick', igUrl: 'https://www.instagram.com/alanfitzpatrick/',
+        method: 'Via We Are The Brave Label', contactLink: 'https://www.instagram.com/wearethebraveofficial/',
+        subLink: '',
+        notes: "Runs We Are The Brave label. Best approach: submit to the label — if he signs it, he'll play it. 'No boundaries' signing philosophy. Bold, melodic techno with heart. One of the UK's most respected techno selectors."
+    },
+    {
+        id: uid(), name: 'Spartaque', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@spartaquelive', igUrl: 'https://www.instagram.com/spartaquelive/',
+        method: 'Email', contactLink: 'demo@codexfamily.com',
+        subLink: 'https://iamtmusic.com/demo',
+        notes: "Ukrainian techno legend, founder of IAMT Music Group and Codex Recordings. 20+ years in the game. 149K IG followers. Best approach: submit to Codex or IAMT — he reviews demos for both. SoundCloud secret links + personalized message required."
+    },
+    {
+        id: uid(), name: 'UMEK', type: 'dj', priority: 1, labelBoss: '',
+        ig: '@umek_1605', igUrl: 'https://www.instagram.com/umek_1605/',
+        method: 'Email / LabelRadar', contactLink: 'ina@sixteenofive.com',
+        subLink: 'https://www.labelradar.com/labels/1605',
+        notes: "Slovenian techno veteran, runs 1605 label, co-founder of Viberate. Personally reviews demos. Submit via LabelRadar for the official channel. Founded 2007 — the label has a very consistent, quality-first identity. Booking: booking@umek.si"
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 2 — LABELS
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'Drumcode', type: 'label', priority: 2, labelBoss: 'Adam Beyer',
+        ig: '@drumcoderecords', igUrl: 'https://www.instagram.com/drumcoderecords/',
+        method: 'LabelRadar', contactLink: 'https://www.labelradar.com/labels/drumcode',
+        subLink: 'https://www.labelradar.com/labels/drumcode',
+        notes: "⚠️ Currently TAKING A BREAK FROM DEMOS on LabelRadar. Monitor their LabelRadar portal — submit immediately when they reopen. Founded 1996 by Adam Beyer. Swedish techno powerhouse, 525K IG followers. One of the most respected labels in the world."
+    },
+    {
+        id: uid(), name: 'Arcane', type: 'label', priority: 2, labelBoss: 'Eli Brown',
+        ig: '@thisisarcane', igUrl: 'https://www.instagram.com/thisisarcane/',
+        method: 'Email', contactLink: 'arcanerec@gmail.com',
+        subLink: '',
+        notes: "Founded by Eli Brown. Darker, more intense techno and house. Read their submission instructions before sending — they have a specific policy. Getting signed here = Eli Brown plays your track."
+    },
+    {
+        id: uid(), name: 'Odd Recordings', type: 'label', priority: 2, labelBoss: '',
+        ig: '@oddityrecordings', igUrl: 'https://www.instagram.com/oddityrecordings/',
+        method: 'Instagram DM / Bandcamp', contactLink: 'https://www.instagram.com/oddityrecordings/',
+        subLink: '',
+        notes: "Melodic house and techno label (Oddity Records by Fur Coat, or ODD Recordings by Arjun Vagale & Ramiro Lopez). Reach via IG DM or Bandcamp. Confirm which 'Odd Recordings' is on your list — add detail here once confirmed."
+    },
+    {
+        id: uid(), name: 'Senso Sounds', type: 'label', priority: 2, labelBoss: 'Oliver Huntemann',
+        ig: '@sensosounds', igUrl: 'https://www.instagram.com/sensosounds/',
+        method: 'Email', contactLink: 'sounds@senso-sounds.net',
+        subLink: 'https://www.senso-sounds.net/demos',
+        notes: "Oliver Huntemann's label, Hamburg, Germany. Founded 2014. 'Finest underground dance music.' Has a dedicated demos page on their website. Reach via email or use their website form."
+    },
+    {
+        id: uid(), name: 'Unrilis', type: 'label', priority: 2, labelBoss: 'Luigi Madonna / Roberto Capuano',
+        ig: '@unrilis', igUrl: 'https://www.instagram.com/unrilis/',
+        method: 'Email', contactLink: 'demo@rilisrec.com',
+        subLink: '',
+        notes: "Naples, Italy. A&R: Luigi Madonna & Roberto Capuano. Groove-first techno — raw, electronic, deep. ⚠️ Send SoundCloud private playlist with 3-4 tracks, or use Trackstack. Your groove-driven style is a natural fit."
+    },
+    {
+        id: uid(), name: 'AnalyticTrail', type: 'label', priority: 2, labelBoss: 'Markantonio',
+        ig: '@analytictrail_rec', igUrl: 'https://www.instagram.com/analytictrail_rec/',
+        method: 'Email', contactLink: 'info@analytictrail.net',
+        subLink: '',
+        notes: "Founded 2001 by Markantonio, Naples, Italy. Groovy techno engineered for the dancefloor — an excellent stylistic match for your sound. One of the longer-running quality techno labels."
+    },
+    {
+        id: uid(), name: 'Say What?', type: 'label', priority: 2, labelBoss: 'Ramon Tapia',
+        ig: '@ramontapiaofc', igUrl: 'https://www.instagram.com/ramontapiaofc/',
+        method: 'Email', contactLink: 'saywhatlabel@gmail.com',
+        subLink: '',
+        notes: "Ramon Tapia's label, founded 2012. Techno productions with high-profile remixes. Strong editorial presence. Email demos directly. Ramon's booking: bookings@lostsouls-management.com"
+    },
+    {
+        id: uid(), name: 'IAMT', type: 'label', priority: 2, labelBoss: 'Spartaque',
+        ig: '@iamt_music_group', igUrl: 'https://www.instagram.com/iamt_music_group/',
+        method: 'Email / Portal', contactLink: 'demo@spartaque.com',
+        subLink: 'https://iamtmusic.com/demo',
+        notes: "Spartaque's umbrella music group — parent company of Codex Recordings. SoundCloud secret links ONLY. One secret playlist with all tracks. Personalized messages are mandatory. Spartaque reviews personally and responds."
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 2 — DJs
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'Adam Beyer', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@realadambeyer', igUrl: 'https://www.instagram.com/realadambeyer/',
+        method: 'Via Drumcode Label', contactLink: 'https://www.labelradar.com/labels/drumcode',
+        subLink: '',
+        notes: "Swedish techno legend, founder of Drumcode. 895K IG followers. Best approach: submit to Drumcode label (via LabelRadar when open) rather than reaching out directly. If Drumcode signs it, he plays it."
+    },
+    {
+        id: uid(), name: 'Alignment', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@alignment__official', igUrl: 'https://www.instagram.com/alignment__official/',
+        method: 'Booking / DM', contactLink: 'info@vesuveagency.com',
+        subLink: '',
+        notes: "Italian hard techno powerhouse from Bologna, based in Berlin. 419K followers. Launched his own label 'Orbital' in 2024. Supported by Charlotte de Witte, Richie Hawtin, Ben Klock, Chris Liebing. Try submitting to Orbital Records or DM via IG."
+    },
+    {
+        id: uid(), name: 'Julian Jeweil', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@julianjeweil', igUrl: 'https://www.instagram.com/julianjeweil/',
+        method: 'Management', contactLink: 'robert@gembookings.nl',
+        subLink: '',
+        notes: "French DJ/producer based in southern France and Berlin. Melodic, cinematic techno. Releases on Drumcode, Filth on Acid, Minus, Cocoon. Management: ghayath@form-mgmt.com. Try reaching via management for demo support."
+    },
+    {
+        id: uid(), name: 'Charles D', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@charlesdmusic', igUrl: 'https://www.instagram.com/charlesdmusic/',
+        method: 'Management', contactLink: 'dennis@gener8agency.com',
+        subLink: '',
+        notes: "NYC-based DJ/producer. Hard-hitting techno grooves with progressive sounds. Releases on Drumcode and Pryda Presents. Supported by Adam Beyer and Eric Prydz. Hosts Synthesized Radio show every first Friday. North/South America: mike@totalvisiontalent.com"
+    },
+    {
+        id: uid(), name: 'Monika Kruse', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@monikakrusedj', igUrl: 'https://www.instagram.com/monikakrusedj/',
+        method: 'Email', contactLink: 'demo@monikakruse.de',
+        subLink: '',
+        notes: "German techno pioneer, runs Terminal M. 305K IG followers. Direct email for demos. Booking: Ian@analog-a.com. Best approach is submitting to Terminal M label — if she signs it, she plays it."
+    },
+    {
+        id: uid(), name: 'Ben Hemsley', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@benhemsley_', igUrl: 'https://www.instagram.com/benhemsley_/',
+        method: 'Instagram DM / bebé Recordings', contactLink: 'https://www.instagram.com/benhemsley_/',
+        subLink: '',
+        notes: "British DJ/producer. DJ Mag Best Producer 2023. Runs bebé Recordings label. Known for trance-influenced UK rave sound with techno edge. 202K IG followers. Submit to bebé Recordings or DM directly — he's accessible and community-oriented."
+    },
+    {
+        id: uid(), name: 'Novah', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@novah.music', igUrl: 'https://www.instagram.com/novah.music/',
+        method: 'Management', contactLink: 'robin@darkroombookings.com',
+        subLink: '',
+        notes: "Belgian hard techno DJ/producer from Antwerp. 2M IG followers — massive reach. Acid, industrial, psy-trance influences. Worldwide management: @oneworldartists_agency. Booking: robin@darkroombookings.com."
+    },
+    {
+        id: uid(), name: 'Odymel', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@odymel', igUrl: 'https://www.instagram.com/odymel/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/odymel/',
+        subLink: '',
+        notes: "Rising techno DJ/producer. DM via Instagram for demo support. Add contact details as you find them."
+    },
+    {
+        id: uid(), name: 'Max Styler', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@maxstyler', igUrl: 'https://www.instagram.com/maxstyler/',
+        method: 'Promo Email', contactLink: 'maxstylerpromo@gmail.com',
+        subLink: '',
+        notes: "California-born DJ/producer, heads Nu Moda label. Management: United Talent Agency (perry.gilman@unitedtalent.com). 144K IG followers. Direct promo email is the cleanest route for demo submissions."
+    },
+    {
+        id: uid(), name: 'Marie Vaunt', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@marievaunt', igUrl: 'https://www.instagram.com/marievaunt/',
+        method: 'Management', contactLink: 'mano@thisismyhou.se',
+        subLink: '',
+        notes: "Japanese-American techno DJ/producer based in LA. Co-founder of Kurai Records. 374K IG followers and rising fast. EU contact: katarina@lovelive.agency. ROW: david.gordoni@unitedtalent.com. Big US techno presence — worth the reach."
+    },
+    {
+        id: uid(), name: 'AK SPORTS', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@aksportsdj', igUrl: 'https://www.instagram.com/aksportsdj/',
+        method: 'Management', contactLink: 'can@nightdepartment.net',
+        subLink: '',
+        notes: "Australian hard techno/nu-rave DJ bouncing between LA and London. Runs Club Madhouse label. Radio host for RINSE FM (London) and WARP MODE (LA). EU: simon@primarytalent.com. 21K followers but very influential in nu-rave circles."
+    },
+    {
+        id: uid(), name: 'Marlon Hoffstadt', type: 'dj', priority: 2, labelBoss: '',
+        ig: '@marlonhoffstadt', igUrl: 'https://www.instagram.com/marlonhoffstadt/',
+        method: 'Via his labels', contactLink: 'https://midnightthemes.bandcamp.com/',
+        subLink: '',
+        notes: "German DJ/producer from Berlin, also known as DJ Daddy Trance. Runs Retrograde and Midnight Themes labels. Versatile across techno, house, trance, Eurodance. 420K IG followers. Submit to Midnight Themes or Retrograde Bandcamp for best route to support."
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 3 — LABELS
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'Reckless', type: 'label', priority: 3, labelBoss: '',
+        ig: '@recklessrecords', igUrl: 'https://www.instagram.com/recklessrecords/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/recklessrecords/',
+        subLink: '',
+        notes: "Rising techno label. DM via Instagram. Update with contact details as you learn more from the scene."
+    },
+    {
+        id: uid(), name: 'Rave Alert', type: 'label', priority: 3, labelBoss: '',
+        ig: '@ravealert', igUrl: 'https://www.instagram.com/ravealert/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/ravealert/',
+        subLink: '',
+        notes: "Rising rave-techno label. DM via Instagram. Update with contact details."
+    },
+    {
+        id: uid(), name: 'Falsive Records', type: 'label', priority: 3, labelBoss: '',
+        ig: '@falsiverecords', igUrl: 'https://www.instagram.com/falsiverecords/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/falsiverecords/',
+        subLink: '',
+        notes: "Rising techno label. DM via Instagram. Update with specific contact as you discover it."
+    },
+    {
+        id: uid(), name: 'Mutual Rytm', type: 'label', priority: 3, labelBoss: '',
+        ig: '@mutualrytm', igUrl: 'https://www.instagram.com/mutualrytm/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/mutualrytm/',
+        subLink: '',
+        notes: "Rising techno label. DM via Instagram. Update with specific contact details."
+    },
+    {
+        id: uid(), name: 'Minds Of Sin', type: 'label', priority: 3, labelBoss: '',
+        ig: '@mindsofsin', igUrl: 'https://www.instagram.com/mindsofsin/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/mindsofsin/',
+        subLink: '',
+        notes: "Rising techno label. DM via Instagram. Update with specific contact details."
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 3 — DJs
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'Fish56Octagon', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@fish56octagon', igUrl: 'https://www.instagram.com/fish56octagon/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/fish56octagon/',
+        subLink: '',
+        notes: "Rising techno/hard techno DJ. DM via Instagram. Update contact details as you learn more."
+    },
+    {
+        id: uid(), name: 'Onlynumbers', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@onlynumbers', igUrl: 'https://www.instagram.com/onlynumbers/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/onlynumbers/',
+        subLink: '',
+        notes: "Rising techno DJ/producer. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'CARV', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@carv_music', igUrl: 'https://www.instagram.com/carv_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/carv_music/',
+        subLink: '',
+        notes: "Rising techno DJ/producer. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Dyen', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@dyen_music', igUrl: 'https://www.instagram.com/dyen_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/dyen_music/',
+        subLink: '',
+        notes: "Rising techno DJ/producer. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Parfait', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@parfait_music', igUrl: 'https://www.instagram.com/parfait_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/parfait_music/',
+        subLink: '',
+        notes: "Rising techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'AKKI', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@akki_techno', igUrl: 'https://www.instagram.com/akki_techno/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/akki_techno/',
+        subLink: '',
+        notes: "Rising techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'blk.', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@blk_music', igUrl: 'https://www.instagram.com/blk_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/blk_music/',
+        subLink: '',
+        notes: "Rising techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Pegassi', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@pegassimusic', igUrl: 'https://www.instagram.com/pegassimusic/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/pegassimusic/',
+        subLink: '',
+        notes: "Rising techno DJ/producer. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Cloudy', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@cloudymusic', igUrl: 'https://www.instagram.com/cloudymusic/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/cloudymusic/',
+        subLink: '',
+        notes: "Rising techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Franck', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@franck_techno', igUrl: 'https://www.instagram.com/franck_techno/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/franck_techno/',
+        subLink: '',
+        notes: "Rising techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Kettama', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@kettama', igUrl: 'https://www.instagram.com/kettama/',
+        method: 'Management', contactLink: 'jarred@overcastmgmt.com',
+        subLink: '',
+        notes: "Irish electronic music producer and DJ (Evan Campbell). Managed by Overcast Management. Management email is the official contact channel for bookings and demo support."
+    },
+    {
+        id: uid(), name: 'Funk Tribu', type: 'dj', priority: 3, labelBoss: '',
+        ig: '@funktribu', igUrl: 'https://www.instagram.com/funktribu/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/funktribu/',
+        subLink: '',
+        notes: "Rising techno DJ. DM via Instagram. Update contact details."
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 4 — LABELS
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'Planet Rhythm', type: 'label', priority: 4, labelBoss: 'Glenn Wilson',
+        ig: '@planetrhythmrecords', igUrl: 'https://www.instagram.com/planetrhythmrecords/',
+        method: 'Email', contactLink: 'demos@triplevision.nl',
+        subLink: '',
+        notes: "Netherlands, founded 1994 by Glenn Wilson. Now owned by Triple Vision Music Group. Classic hardgroove techno institution. ⚠️ Do NOT email the SoundCloud address — send to demos@triplevision.nl only."
+    },
+    {
+        id: uid(), name: 'Decoded Records', type: 'label', priority: 4, labelBoss: '',
+        ig: '@decodedrecords', igUrl: 'https://www.instagram.com/decodedrecords/',
+        method: 'Via Website', contactLink: 'https://www.decoded-records.com/',
+        subLink: '',
+        notes: "Founded Sibenik 2007. Classic techno with tribal, electro and minimal elements. Has sublabel Decoded Mini Records for minimal/groove. Check their website for current demo submission details."
+    },
+    {
+        id: uid(), name: 'Enemy Records', type: 'label', priority: 4, labelBoss: '',
+        ig: '@enemyrecords', igUrl: 'https://www.instagram.com/enemyrecords/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/enemyrecords/',
+        subLink: '',
+        notes: "Hardgroove techno label. DM via Instagram. Update contact details as you learn more."
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 4 — DJs
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'Chlär', type: 'dj', priority: 4, labelBoss: '',
+        ig: '@chlaer_', igUrl: 'https://www.instagram.com/chlaer_/',
+        method: 'Email', contactLink: 'chlaermusic@gmail.com',
+        subLink: '',
+        notes: "Swiss DJ/producer based in Berlin (Charles Accarisi). Fresh techno with an old-school twist. 1/2 of @funkassault and founder of @primalinstinct.rec label. Also works as a mastering engineer. 127K IG followers. Booking: pierre@reprisetalentagency.com"
+    },
+    {
+        id: uid(), name: 'Alarico', type: 'dj', priority: 4, labelBoss: '',
+        ig: '@alarico_music', igUrl: 'https://www.instagram.com/alarico_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/alarico_music/',
+        subLink: '',
+        notes: "Hardgroove techno specialist. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Rene Wise', type: 'dj', priority: 4, labelBoss: '',
+        ig: '@renewise', igUrl: 'https://www.instagram.com/renewise/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/renewise/',
+        subLink: '',
+        notes: "Hardgroove techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Marcal', type: 'dj', priority: 4, labelBoss: '',
+        ig: '@marcal_music', igUrl: 'https://www.instagram.com/marcal_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/marcal_music/',
+        subLink: '',
+        notes: "Hardgroove techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Isaiah', type: 'dj', priority: 4, labelBoss: '',
+        ig: '@isaiah_techno', igUrl: 'https://www.instagram.com/isaiah_techno/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/isaiah_techno/',
+        subLink: '',
+        notes: "Hardgroove techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'BAUGRUPPE90', type: 'dj', priority: 4, labelBoss: '',
+        ig: '@baugruppe90', igUrl: 'https://www.instagram.com/baugruppe90/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/baugruppe90/',
+        subLink: '',
+        notes: "Berlin-based hardgroove techno DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'DJ SWISHERMAN', type: 'dj', priority: 4, labelBoss: '',
+        ig: '@djswisherman', igUrl: 'https://www.instagram.com/djswisherman/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/djswisherman/',
+        subLink: '',
+        notes: "Hardgroove techno specialist. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'ANNĒ', type: 'dj', priority: 4, labelBoss: '',
+        ig: '@anne_music', igUrl: 'https://www.instagram.com/anne_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/anne_music/',
+        subLink: '',
+        notes: "Hardgroove techno DJ. DM via Instagram. Update contact details."
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 5 — LABELS
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'KNTXT', type: 'label', priority: 5, labelBoss: 'Charlotte de Witte',
+        ig: '@kntxtmusic', igUrl: 'https://www.instagram.com/kntxtmusic/',
+        method: 'Email', contactLink: 'demos@kntxt.be',
+        subLink: '',
+        notes: "🚨 Charlotte de Witte's label — CURRENTLY ACCEPTING DEMOS (May 2026)! Send artist bio + 3-5 tracks uploaded to SoundCloud. Charlotte listens to every submission personally. This is a rare open window — send ASAP. Dark, acid, minimal techno focus."
+    },
+    {
+        id: uid(), name: 'EXHALE', type: 'label', priority: 5, labelBoss: '',
+        ig: '@exhale_music', igUrl: 'https://www.instagram.com/exhale_music/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/exhale_music/',
+        subLink: '',
+        notes: "Notable: Charlie Sparks (your P1 DJ) had a release on this label — a potential connection point. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Experts Only', type: 'label', priority: 5, labelBoss: '',
+        ig: '@expertsonly', igUrl: 'https://www.instagram.com/expertsonly/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/expertsonly/',
+        subLink: '',
+        notes: "Wildcard label. DM via Instagram. Update contact details."
+    },
+
+    // ══════════════════════════════════════
+    // PRIORITY 5 — DJs
+    // ══════════════════════════════════════
+    {
+        id: uid(), name: 'John Summit', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@johnsummit', igUrl: 'https://www.instagram.com/johnsummit/',
+        method: 'Via Repopulate Mars label', contactLink: 'demos@repopulatemars.com',
+        subLink: '',
+        notes: "Major US house/tech-house name. Long shot for groove-techno but massive reach. Best approach: submit to Repopulate Mars label (which he's associated with) — if they sign it, he may play it. His own label: Off The Grid."
+    },
+    {
+        id: uid(), name: 'Amelie Lens', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@amelielens', igUrl: 'https://www.instagram.com/amelielens/',
+        method: 'Via LENSKE label', contactLink: 'https://www.instagram.com/lenskerecords/',
+        subLink: '',
+        notes: "Belgian techno DJ. Runs LENSKE label. Long shot but possible with the right track. Submit to LENSKE label for best chance at support. Massive following, known for dark, hypnotic techno."
+    },
+    {
+        id: uid(), name: 'Charlotte de Witte', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@charlottedewittemusic', igUrl: 'https://www.instagram.com/charlottedewittemusic/',
+        method: 'Via KNTXT Label', contactLink: 'demos@kntxt.be',
+        subLink: '',
+        notes: "World's #1 techno DJ (DJ Mag). Belgian acid/minimal techno queen. 5M IG followers. Runs KNTXT and Époque labels. 🚨 KNTXT is currently accepting demos (May 2026) — submit artist bio + 3-5 SoundCloud tracks to demos@kntxt.be. Best route in."
+    },
+    {
+        id: uid(), name: 'Kasablanca', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@kasablanca', igUrl: 'https://www.instagram.com/kasablanca/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/kasablanca/',
+        subLink: '',
+        notes: "DJ duo. Wildcard — worth sending if the track fits. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Popof', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@popofmusic', igUrl: 'https://www.instagram.com/popofmusic/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/popofmusic/',
+        subLink: '',
+        notes: "French techno DJ/producer. Wildcard. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Juliet Fox', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@julietfox', igUrl: 'https://www.instagram.com/julietfox/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/julietfox/',
+        subLink: '',
+        notes: "Techno DJ. Wildcard. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Bad Boombox', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@badboombox', igUrl: 'https://www.instagram.com/badboombox/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/badboombox/',
+        subLink: '',
+        notes: "Wildcard DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'MCR-T', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@mcr_t', igUrl: 'https://www.instagram.com/mcr_t/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/mcr_t/',
+        subLink: '',
+        notes: "UK techno/nu-rave DJ. Wildcard. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Sikoti', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@sikoti', igUrl: 'https://www.instagram.com/sikoti/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/sikoti/',
+        subLink: '',
+        notes: "Wildcard DJ. DM via Instagram. Update contact details."
+    },
+    {
+        id: uid(), name: 'Lee Foss', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@leefoss', igUrl: 'https://www.instagram.com/leefoss/',
+        method: 'Via Repopulate Mars', contactLink: 'demos@repopulatemars.com',
+        subLink: '',
+        notes: "Runs Repopulate Mars label. Best approach: submit to the label directly — if signed, he plays it. ⚠️ SoundCloud or Dropbox links only, max 4 demos, full mixes preferred. Also on your P1 labels list as label boss."
+    },
+    {
+        id: uid(), name: 'Kyle Watson', type: 'dj', priority: 5, labelBoss: '',
+        ig: '@kylewatsonmusic', igUrl: 'https://www.instagram.com/kylewatsonmusic/',
+        method: 'Instagram DM', contactLink: 'https://www.instagram.com/kylewatsonmusic/',
+        subLink: '',
+        notes: "South African tech-house/house DJ. Wildcard long shot. DM via Instagram. Update contact details."
+    },
+];
+
+// ════════════════════════════════════════
+//  STORAGE
+// ════════════════════════════════════════
+const CONTACTS_KEY = 'sbt-contacts-v1';
+const SUBS_KEY = 'sbt-submissions-v1';
+
+function loadContacts() {
+    const raw = localStorage.getItem(CONTACTS_KEY);
+    return raw ? JSON.parse(raw) : DEFAULT_CONTACTS.map(c => ({ ...c }));
+}
+
+function loadSubs() {
+    const raw = localStorage.getItem(SUBS_KEY);
+    return raw ? JSON.parse(raw) : [];
+}
+
+let contacts = loadContacts();
+let submissions = loadSubs();
+
+// Seed defaults on first load
+if (!localStorage.getItem(CONTACTS_KEY)) persist();
+
+// ════════════════════════════════════════
+//  EXPORT / IMPORT / RESET
+// ════════════════════════════════════════
+function toggleDataMenu() {
+    document.getElementById('data-dropdown').classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+    if (!document.getElementById('data-menu').contains(e.target)) {
+        document.getElementById('data-dropdown').classList.remove('open');
+    }
+});
+
+function exportData() {
+    document.getElementById('data-dropdown').classList.remove('open');
+    const blob = new Blob([JSON.stringify({ contacts, submissions }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sb-tracker-backup-' + today() + '.json';
+    a.click();
+    toast('Data exported ✓');
+}
+
+function importData(e) {
+    document.getElementById('data-dropdown').classList.remove('open');
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            if (data.contacts && data.submissions) {
+                contacts = data.contacts;
+                submissions = data.submissions;
+                persist();
+                refreshCurrentView();
+                toast('Data imported ✓');
+            } else {
+                toast('Invalid file format');
+            }
+        } catch { toast('Could not read file'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+function resetData() {
+    document.getElementById('data-dropdown').classList.remove('open');
+    if (!confirm('Reset all data to defaults? This will delete any edits, contacts, and submissions you have added.')) return;
+    contacts = DEFAULT_CONTACTS.map(c => ({ ...c }));
+    submissions = [];
+    persist();
+    refreshCurrentView();
+    toast('Reset to defaults');
+}
+
+// ════════════════════════════════════════
+//  PRIORITY HELPERS
+// ════════════════════════════════════════
+const P_INFO = {
+    1: { emoji: '🥇', label: 'Priority 1 — Send First',       cls: 'p1-badge', bar: 'p1-bar' },
+    2: { emoji: '🥈', label: 'Priority 2 — Very Strong Fits', cls: 'p2-badge', bar: 'p2-bar' },
+    3: { emoji: '🥉', label: 'Priority 3 — Rising Upside',    cls: 'p3-badge', bar: 'p3-bar' },
+    4: { emoji: '🎯', label: 'Priority 4 — Hardgroove',       cls: 'p4-badge', bar: 'p4-bar' },
+    5: { emoji: '🌎', label: 'Priority 5 — Wildcards',        cls: 'p5-badge', bar: 'p5-bar' },
+};
+
+function statusInfo(status, responseDetail) {
+    if (status === 'signed') return { label: 'Signed! 🎉', cls: 'badge-signed' };
+    if (status === 'response') {
+        const map = {
+            interested: { label: 'Interested', cls: 'badge-interested' },
+            hold:       { label: 'On Hold',    cls: 'badge-hold' },
+            pass:       { label: 'Pass',       cls: 'badge-pass' },
+            no_reply:   { label: 'No Reply',   cls: 'badge-no_reply' },
+        };
+        return map[responseDetail] || { label: 'Responded', cls: 'badge-response' };
+    }
+    return { label: 'Sent', cls: 'badge-sent' };
+}
+
+function contactSubs(contactId) {
+    return submissions.filter(s => s.contactId === contactId);
+}
+
+// ════════════════════════════════════════
+//  TAB SWITCHING
+// ════════════════════════════════════════
+let activeTab = 'dashboard';
+
+function switchTab(tab, el) {
+    activeTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(tab + '-view').classList.add('active');
+    refreshCurrentView();
+}
+
+function refreshCurrentView() {
+    if (activeTab === 'dashboard') renderDashboard();
+    if (activeTab === 'labels') renderCards('labels-content', 'label');
+    if (activeTab === 'djs') renderCards('djs-content', 'dj');
+    if (activeTab === 'submissions') renderSubsTable();
+}
+
+// ════════════════════════════════════════
+//  RENDER CONTACT CARDS
+// ════════════════════════════════════════
+function renderCards(containerId, type, filterText = '') {
+    const container = document.getElementById(containerId);
+    const q = filterText.toLowerCase();
+    let html = '';
+
+    for (let p = 1; p <= 5; p++) {
+        let group = contacts.filter(c => c.type === type && c.priority === p);
+        if (q) group = group.filter(c => c.name.toLowerCase().includes(q) || (c.labelBoss || '').toLowerCase().includes(q));
+        if (group.length === 0) continue;
+        const pi = P_INFO[p];
+        html += `
+        <div class="priority-section">
+            <div class="priority-header">
+                <span class="priority-badge ${pi.cls}">${pi.emoji} ${pi.label}</span>
+                <span class="priority-count">${group.length} ${type === 'label' ? 'label' : 'DJ'}${group.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="cards-grid">${group.map(c => cardHTML(c)).join('')}</div>
+        </div>`;
+    }
+
+    container.innerHTML = html || `<div class="empty-table"><div class="empty-table-icon">🔍</div><div class="empty-table-text">No results</div></div>`;
+}
+
+function filterCards(containerId, val) {
+    const type = containerId.startsWith('labels') ? 'label' : 'dj';
+    renderCards(containerId, type, val);
+}
+
+function cardHTML(c) {
+    const subs = contactSubs(c.id);
+
+    const igHtml = c.ig
+        ? `<div class="info-row"><span class="info-label">Instagram</span><a class="info-link" href="${c.igUrl || 'https://instagram.com/' + c.ig.replace('@','')}" target="_blank">${c.ig}</a></div>`
+        : '';
+
+    const bossHtml = c.labelBoss
+        ? `<div class="info-row"><span class="info-label">Boss</span><span class="info-value">${c.labelBoss}</span></div>`
+        : '';
+
+    const methodHtml = c.method
+        ? `<div class="info-row"><span class="info-label">Contact</span>${c.contactLink ? `<a class="info-link" href="${c.contactLink}" target="_blank">${c.method}</a>` : `<span class="info-value">${c.method}</span>`}</div>`
+        : '';
+
+    const subLinkHtml = c.subLink
+        ? `<div class="info-row"><span class="info-label">Submit</span><a class="info-link" href="${c.subLink}" target="_blank">Open Portal ↗</a></div>`
+        : '';
+
+    const notesHtml = c.notes
+        ? `<div class="card-notes"><div class="card-notes-label">Notes</div><div class="card-notes-text">${c.notes}</div></div>`
+        : '';
+
+    let subsHtml;
+    if (subs.length > 0) {
+        subsHtml = subs.slice().reverse().slice(0, 3).map(s => {
+            const si = statusInfo(s.status, s.responseDetail);
+            return `<div class="sub-item" onclick="openSubmissionModal('${s.id}')">
+                <div>
+                    <div class="sub-song">${s.song || 'Untitled'}</div>
+                    <div class="sub-date">${fmtDate(s.dateSent)}</div>
+                </div>
+                <span class="badge ${si.cls}">${si.label}</span>
+            </div>`;
+        }).join('');
+    } else {
+        subsHtml = '<div class="no-subs">No submissions yet</div>';
+    }
+
+    return `
+    <div class="contact-card">
+        <div class="card-top">
+            <div style="flex:1;min-width:0">
+                <div class="card-name">${c.name}</div>
+                ${c.type === 'label' && c.labelBoss ? `<div class="card-boss">${c.labelBoss}</div>` : ''}
+            </div>
+            <div class="card-btns">
+                <button class="btn-icon" title="Log submission" onclick="openSubmissionModal(null,'${c.id}')">＋</button>
+                <button class="btn-icon" title="Edit contact" onclick="openContactModal('${c.id}')">✏️</button>
+            </div>
+        </div>
+        <div class="card-tags">
+            <span class="tag ${c.type === 'label' ? 'tag-label' : 'tag-dj'}">${c.type === 'label' ? 'Label' : 'DJ'}</span>
+        </div>
+        <div class="card-info">
+            ${bossHtml}${igHtml}${methodHtml}${subLinkHtml}
+        </div>
+        ${notesHtml}
+        <div class="card-subs">
+            <div class="card-subs-header">
+                <span class="card-subs-label">Submissions (${subs.length})</span>
+                <button class="btn-add-sub" onclick="openSubmissionModal(null,'${c.id}')">+ Add</button>
+            </div>
+            ${subsHtml}
+        </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════
+//  SUBMISSIONS TABLE
+// ════════════════════════════════════════
+let subFilter = 'all';
+let subSearch = '';
+
+function renderSubsTable() {
+    const tbody = document.getElementById('subs-tbody');
+    let list = [...submissions];
+
+    if (subFilter !== 'all') list = list.filter(s => s.status === subFilter);
+    if (subSearch) {
+        const q = subSearch.toLowerCase();
+        list = list.filter(s => {
+            const c = contacts.find(c => c.id === s.contactId);
+            return (s.song || '').toLowerCase().includes(q) || (c && c.name.toLowerCase().includes(q));
+        });
+    }
+
+    list.sort((a, b) => (b.dateSent || '').localeCompare(a.dateSent || ''));
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-table">
+            <div class="empty-table-icon">🎵</div>
+            <div class="empty-table-text">No submissions yet</div>
+            <div class="empty-table-sub">Log your first submission using the button above</div>
+        </div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(s => {
+        const c = contacts.find(c => c.id === s.contactId);
+        const si = statusInfo(s.status, s.responseDetail);
+        const pi = c ? P_INFO[c.priority] : null;
+        return `<tr onclick="openSubmissionModal('${s.id}')">
+            <td class="td-name">${s.song || 'Untitled'}</td>
+            <td class="td-contact">${c ? c.name : '—'}</td>
+            <td class="hide-mobile"><span class="tag ${c && c.type === 'label' ? 'tag-label' : 'tag-dj'}">${c ? (c.type === 'label' ? 'Label' : 'DJ') : '—'}</span></td>
+            <td class="hide-mobile">${pi ? `${pi.emoji} P${c.priority}` : '—'}</td>
+            <td><span class="badge ${si.cls}">${si.label}</span></td>
+            <td class="hide-mobile">${fmtDate(s.dateSent)}</td>
+            <td><button class="btn-icon" onclick="event.stopPropagation();openSubmissionModal('${s.id}')">✏️</button></td>
+        </tr>`;
+    }).join('');
+}
+
+function filterSubs(f, btn) {
+    subFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderSubsTable();
+}
+
+function searchSubs(val) {
+    subSearch = val;
+    renderSubsTable();
+}
+
+// ════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════
+let weeklyChartInst, responseChartInst;
+
+function renderDashboard() {
+    const total = submissions.length;
+    const responded = submissions.filter(s => s.status === 'response' || s.status === 'signed').length;
+    const signed = submissions.filter(s => s.status === 'signed').length;
+    const rate = total > 0 ? Math.round((responded / total) * 100) : 0;
+
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-rate').textContent = rate + '%';
+    document.getElementById('stat-signed').textContent = signed;
+    document.getElementById('stat-contacts').textContent = contacts.length;
+
+    renderWeeklyChart();
+    renderResponseChart();
+    renderTierBreakdown();
+}
+
+function weeklyData() {
+    const weeks = [];
+    const now = new Date();
+    for (let i = 7; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i * 7);
+        weeks.push({ label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), start: i, count: 0 });
+    }
+    submissions.forEach(s => {
+        if (!s.dateSent) return;
+        const diff = Math.floor((now - new Date(s.dateSent + 'T00:00:00')) / 86400000);
+        const wi = Math.floor(diff / 7);
+        if (wi >= 0 && wi <= 7) weeks[7 - wi].count++;
+    });
+    return weeks;
+}
+
+function renderWeeklyChart() {
+    if (weeklyChartInst) weeklyChartInst.destroy();
+    const data = weeklyData();
+    weeklyChartInst = new Chart(document.getElementById('weeklyChart'), {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.label),
+            datasets: [{
+                data: data.map(d => d.count),
+                backgroundColor: 'rgba(0,122,255,0.15)',
+                borderColor: 'rgba(0,122,255,0.75)',
+                borderWidth: 2,
+                borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+function renderResponseChart() {
+    if (responseChartInst) responseChartInst.destroy();
+    const sent       = submissions.filter(s => s.status === 'sent').length;
+    const interested = submissions.filter(s => s.responseDetail === 'interested').length;
+    const hold       = submissions.filter(s => s.responseDetail === 'hold').length;
+    const pass       = submissions.filter(s => s.responseDetail === 'pass').length;
+    const noReply    = submissions.filter(s => s.responseDetail === 'no_reply').length;
+    const signed     = submissions.filter(s => s.status === 'signed').length;
+    const hasData = sent + interested + hold + pass + noReply + signed > 0;
+
+    responseChartInst = new Chart(document.getElementById('responseChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Awaiting', 'Interested', 'On Hold', 'Pass', 'No Reply', 'Signed'],
+            datasets: [{
+                data: hasData ? [sent, interested, hold, pass, noReply, signed] : [1],
+                backgroundColor: hasData
+                    ? ['#007AFF','#34C759','#FF9500','#FF3B30','#8E8E93','#AF52DE']
+                    : ['#E5E5EA'],
+                borderWidth: 0,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, usePointStyle: true } }
+            }
+        }
+    });
+}
+
+function renderTierBreakdown() {
+    const counts = {};
+    for (let p = 1; p <= 5; p++) {
+        const ids = contacts.filter(c => c.priority === p).map(c => c.id);
+        counts[p] = submissions.filter(s => ids.includes(s.contactId)).length;
+    }
+    const max = Math.max(...Object.values(counts), 1);
+
+    document.getElementById('tier-breakdown').innerHTML =
+        Object.entries(counts).map(([p, n]) => {
+            const pi = P_INFO[p];
+            return `<div class="tier-row">
+                <span class="tier-name">${pi.emoji} Priority ${p}</span>
+                <div class="tier-bar-wrap"><div class="tier-bar ${pi.bar}" style="width:${(n/max)*100}%"></div></div>
+                <span class="tier-count">${n}</span>
+            </div>`;
+        }).join('');
+}
+
+// ════════════════════════════════════════
+//  CONTACT MODAL
+// ════════════════════════════════════════
+function openContactModal(contactId) {
+    const del = document.getElementById('cm-delete-btn');
+    document.getElementById('cm-id').value = contactId || '';
+    document.getElementById('contact-modal-title').textContent = contactId ? 'Edit Contact' : 'Add Contact';
+    del.style.display = contactId ? 'block' : 'none';
+
+    if (contactId) {
+        const c = contacts.find(c => c.id === contactId);
+        if (!c) return;
+        document.getElementById('cm-type').value = c.type;
+        document.getElementById('cm-priority').value = c.priority;
+        document.getElementById('cm-name').value = c.name;
+        document.getElementById('cm-boss').value = c.labelBoss || '';
+        document.getElementById('cm-ig').value = c.ig || '';
+        document.getElementById('cm-ig-url').value = c.igUrl || '';
+        document.getElementById('cm-method').value = c.method || '';
+        document.getElementById('cm-link').value = c.contactLink || '';
+        document.getElementById('cm-sub-link').value = c.subLink || '';
+        document.getElementById('cm-notes').value = c.notes || '';
+    } else {
+        ['cm-name','cm-boss','cm-ig','cm-ig-url','cm-link','cm-sub-link','cm-notes'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('cm-type').value = 'label';
+        document.getElementById('cm-priority').value = '1';
+        document.getElementById('cm-method').value = '';
+    }
+    document.getElementById('contact-modal').classList.add('open');
+}
+
+function saveContact() {
+    const id = document.getElementById('cm-id').value;
+    const name = document.getElementById('cm-name').value.trim();
+    if (!name) { toast('Please enter a name'); return; }
+
+    const c = {
+        id: id || uid(),
+        name,
+        type: document.getElementById('cm-type').value,
+        priority: parseInt(document.getElementById('cm-priority').value),
+        labelBoss: document.getElementById('cm-boss').value.trim(),
+        ig: document.getElementById('cm-ig').value.trim(),
+        igUrl: document.getElementById('cm-ig-url').value.trim(),
+        method: document.getElementById('cm-method').value,
+        contactLink: document.getElementById('cm-link').value.trim(),
+        subLink: document.getElementById('cm-sub-link').value.trim(),
+        notes: document.getElementById('cm-notes').value.trim(),
+    };
+
+    if (id) {
+        const i = contacts.findIndex(x => x.id === id);
+        if (i !== -1) contacts[i] = c;
+    } else {
+        contacts.push(c);
+    }
+
+    persist();
+    closeModal('contact-modal');
+    refreshCurrentView();
+    toast(id ? 'Contact updated ✓' : 'Contact added ✓');
+}
+
+function deleteContact() {
+    const id = document.getElementById('cm-id').value;
+    const c = contacts.find(c => c.id === id);
+    if (!c) return;
+    if (!confirm(`Delete "${c.name}"? Their submissions will also be removed.`)) return;
+    contacts = contacts.filter(c => c.id !== id);
+    submissions = submissions.filter(s => s.contactId !== id);
+    persist();
+    closeModal('contact-modal');
+    refreshCurrentView();
+    toast('Contact deleted');
+}
+
+// ════════════════════════════════════════
+//  SUBMISSION MODAL
+// ════════════════════════════════════════
+function openSubmissionModal(subId, preContactId) {
+    const del = document.getElementById('sm-delete-btn');
+    document.getElementById('sm-id').value = subId || '';
+    document.getElementById('sm-title').textContent = subId ? 'Edit Submission' : 'Log Submission';
+    del.style.display = subId ? 'block' : 'none';
+
+    // Build contact dropdown sorted by priority
+    const sel = document.getElementById('sm-contact');
+    sel.innerHTML = contacts
+        .slice().sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name))
+        .map(c => `<option value="${c.id}">${P_INFO[c.priority].emoji} ${c.name} (${c.type === 'label' ? 'Label' : 'DJ'})</option>`)
+        .join('');
+
+    if (subId) {
+        const s = submissions.find(s => s.id === subId);
+        if (!s) return;
+        sel.value = s.contactId;
+        document.getElementById('sm-song').value = s.song || '';
+        document.getElementById('sm-date').value = s.dateSent || '';
+        document.getElementById('sm-status').value = s.status || 'sent';
+        document.getElementById('sm-response').value = s.responseDetail || 'interested';
+        document.getElementById('sm-date-responded').value = s.dateResponded || '';
+        document.getElementById('sm-notes').value = s.notes || '';
+    } else {
+        if (preContactId) sel.value = preContactId;
+        document.getElementById('sm-song').value = '';
+        document.getElementById('sm-date').value = today();
+        document.getElementById('sm-status').value = 'sent';
+        document.getElementById('sm-response').value = 'interested';
+        document.getElementById('sm-date-responded').value = '';
+        document.getElementById('sm-notes').value = '';
+    }
+
+    onStatusChange();
+    document.getElementById('submission-modal').classList.add('open');
+}
+
+function onStatusChange() {
+    const status = document.getElementById('sm-status').value;
+    document.getElementById('sm-response-group').style.display = status === 'response' ? 'block' : 'none';
+    document.getElementById('sm-date-responded-group').style.display = (status === 'response' || status === 'signed') ? 'block' : 'none';
+}
+
+function saveSubmission() {
+    const id = document.getElementById('sm-id').value;
+    const song = document.getElementById('sm-song').value.trim();
+    const contactId = document.getElementById('sm-contact').value;
+    if (!song) { toast('Please enter a song title'); return; }
+    if (!contactId) { toast('Please select a contact'); return; }
+
+    const s = {
+        id: id || uid(),
+        contactId,
+        song,
+        dateSent: document.getElementById('sm-date').value,
+        status: document.getElementById('sm-status').value,
+        responseDetail: document.getElementById('sm-response').value,
+        dateResponded: document.getElementById('sm-date-responded').value,
+        notes: document.getElementById('sm-notes').value.trim(),
+    };
+
+    if (id) {
+        const i = submissions.findIndex(x => x.id === id);
+        if (i !== -1) submissions[i] = s;
+    } else {
+        submissions.push(s);
+    }
+
+    persist();
+    closeModal('submission-modal');
+    refreshCurrentView();
+    toast(id ? 'Submission updated ✓' : 'Submission logged ✓');
+}
+
+function deleteSubmission() {
+    const id = document.getElementById('sm-id').value;
+    if (!confirm('Delete this submission?')) return;
+    submissions = submissions.filter(s => s.id !== id);
+    persist();
+    closeModal('submission-modal');
+    refreshCurrentView();
+    toast('Submission deleted');
+}
+
+// ════════════════════════════════════════
+//  MODAL HELPERS
+// ════════════════════════════════════════
+function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+}
+
+function handleOverlayClick(e, id) {
+    if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+// ════════════════════════════════════════
+//  GOOGLE SHEETS SYNC
+// ════════════════════════════════════════
+const SHEETS_KEY = 'sbt-sheets-url';
+
+function getSheetsUrl() {
+    return localStorage.getItem(SHEETS_KEY) || '';
+}
+
+function setSyncStatus(state) {
+    const indicator = document.getElementById('sync-indicator');
+    const dot       = document.getElementById('sync-dot');
+    const label     = document.getElementById('sync-label');
+    if (state === 'hidden') { indicator.style.display = 'none'; return; }
+    indicator.style.display = 'flex';
+    if (state === 'syncing') { dot.style.background = '#FF9500'; label.textContent = 'Syncing…'; }
+    if (state === 'ok')      { dot.style.background = '#34C759'; label.textContent = 'Synced';   setTimeout(() => setSyncStatus('hidden'), 3000); }
+    if (state === 'error')   { dot.style.background = '#FF3B30'; label.textContent = 'Sync error'; }
+}
+
+async function pushToSheets() {
+    const url = getSheetsUrl();
+    if (!url) return;
+    setSyncStatus('syncing');
+    try {
+        await fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contacts, submissions })
+        });
+        setSyncStatus('ok');
+    } catch (e) {
+        setSyncStatus('error');
+    }
+}
+
+async function pullFromSheets() {
+    const url = getSheetsUrl();
+    if (!url) return false;
+    setSyncStatus('syncing');
+    try {
+        const res  = await fetch(url + '?t=' + Date.now());
+        const json = await res.json();
+        if (json.success && json.data) {
+            if (json.data.contacts && json.data.contacts.length > 0) {
+                contacts    = json.data.contacts;
+                submissions = json.data.submissions || [];
+                persist();
+            }
+            setSyncStatus('ok');
+            return true;
+        }
+        setSyncStatus('error');
+        return false;
+    } catch (e) {
+        setSyncStatus('error');
+        return false;
+    }
+}
+
+function persist() {
+    localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
+    localStorage.setItem(SUBS_KEY, JSON.stringify(submissions));
+    pushToSheets();
+}
+
+async function manualSync() {
+    document.getElementById('data-dropdown').classList.remove('open');
+    const pulled = await pullFromSheets();
+    if (pulled) { refreshCurrentView(); toast('Synced from Google Sheets ✓'); }
+    else if (!getSheetsUrl()) { toast('No Google Sheet connected — use ⚙️ Data to set up.'); }
+    else { toast('Sync failed — check your Apps Script URL'); }
+}
+
+// ── Setup Modal ──────────────────────────────────────────────
+
+function openSheetsSetup() {
+    document.getElementById('data-dropdown').classList.remove('open');
+    const url = getSheetsUrl();
+    document.getElementById('sheets-url-input').value = url;
+    document.getElementById('disconnect-btn').style.display = url ? 'block' : 'none';
+    document.getElementById('sheets-status').style.display = 'none';
+    document.getElementById('sheets-modal').classList.add('open');
+}
+
+async function saveAndTestSheets() {
+    const url   = document.getElementById('sheets-url-input').value.trim();
+    const status = document.getElementById('sheets-status');
+    if (!url) { status.style.display='block'; status.style.color='var(--danger)'; status.textContent='Please enter a URL.'; return; }
+
+    status.style.display='block'; status.style.color='var(--text-secondary)'; status.textContent='Testing connection…';
+    localStorage.setItem(SHEETS_KEY, url);
+
+    try {
+        const res  = await fetch(url + '?t=' + Date.now());
+        const json = await res.json();
+        if (json.success) {
+            status.style.color = 'var(--success)';
+            status.textContent = '✓ Connected! Pushing your data now…';
+            if (json.data && json.data.contacts && json.data.contacts.length > 0) {
+                contacts    = json.data.contacts;
+                submissions = json.data.submissions || [];
+                localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
+                localStorage.setItem(SUBS_KEY, JSON.stringify(submissions));
+            }
+            await pushToSheets();
+            setTimeout(() => { closeModal('sheets-modal'); refreshCurrentView(); toast('Google Sheets connected ✓'); }, 1200);
+        } else {
+            throw new Error(json.error || 'Unknown error');
+        }
+    } catch (e) {
+        status.style.color = 'var(--danger)';
+        status.textContent = '✗ Could not connect. Double-check the URL and that the script is deployed as "Anyone" access.';
+        localStorage.removeItem(SHEETS_KEY);
+    }
+}
+
+function disconnectSheets() {
+    if (!confirm('Disconnect Google Sheets? Your local data will stay intact.')) return;
+    localStorage.removeItem(SHEETS_KEY);
+    closeModal('sheets-modal');
+    toast('Google Sheets disconnected');
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+(async function init() {
+    // Try to pull latest from Sheets on startup; fall back to localStorage silently
+    if (getSheetsUrl()) {
+        const pulled = await pullFromSheets();
+        if (pulled) refreshCurrentView();
+    }
+    renderDashboard();
+    // Show setup nudge on first load if no Sheets connected
+    if (!getSheetsUrl() && !localStorage.getItem('sbt-setup-seen')) {
+        localStorage.setItem('sbt-setup-seen', '1');
+        setTimeout(() => toast('Tip: connect Google Sheets via ⚙️ Data for cross-device sync'), 2000);
+    }
+})();
+</script>
+</body>
+</html>
